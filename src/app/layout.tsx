@@ -61,7 +61,7 @@ export default function RootLayout({
                 </h4>
                 <div className="text-xs text-white space-y-1">
                   <p>📍 Near Hassan Abdullah CNG Bypass Wazirabad</p>
-                  <p>📞 Phone: <span className="font-mono font-semibold">0300-1234567</span></p>
+                  <p>📞 Phone: <span className="font-mono font-semibold">0314-7206680</span></p>
                 </div>
               </div>
             </div>

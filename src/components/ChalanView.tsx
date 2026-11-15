@@ -60,7 +60,7 @@ export default function ChalanView({ student }: ChalanProps) {
         <div>
           <h4 className="font-bold text-xs sm:text-sm">Payment Instructions:</h4>
           <p className="mt-1 text-[11px] sm:text-xs text-amber-800 leading-relaxed">
-            Scan the official QR code below using your Easypaisa application to transfer <strong>PKR 6,000/-</strong>. 
+            Scan the official JazzCash QR code below to transfer <strong>PKR 6,000/-</strong>. 
             After completing the transfer, save your <strong>Transaction ID (TID)</strong> and receipt screenshot, then submit them via the <strong>"Upload Proof"</strong> button.
           </p>
         </div>
@@ -142,13 +142,13 @@ export default function ChalanView({ student }: ChalanProps) {
           </div>
         </div>
 
-        {/* Single Official Easypaisa QR Section */}
+        {/* Single Official QR Section */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
           <div className="max-w-xs mx-auto bg-white p-3 rounded-xl border border-slate-200/90 shadow-xs">
             <div className="relative w-full aspect-square max-w-[240px] mx-auto">
               <Image
-                src="/easypaisa-qr.jpg"
-                alt="Easypaisa QR Code - MIRZA MUHAMMAD WAFA DAR ABBAS"
+                src="/payment-qr.jpg"
+                alt="JazzCash QR Code - TALHA NASIR"
                 fill
                 className="object-contain rounded-lg"
                 priority
@@ -156,7 +156,7 @@ export default function ChalanView({ student }: ChalanProps) {
             </div>
           </div>
           <p className="text-xs text-slate-600 mt-3 font-medium">
-            Scan via Easypaisa App to transfer <strong className="text-slate-900 font-bold">Rs. 6,000/-</strong>
+            Scan via JazzCash / Mobile Banking App to transfer <strong className="text-slate-900 font-bold">PKR 6,000/-</strong>
           </p>
         </div>
 

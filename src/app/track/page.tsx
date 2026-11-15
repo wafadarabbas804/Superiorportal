@@ -276,7 +276,7 @@ function TrackContent() {
           {(student.payment_status === 'pending_payment' || student.payment_status === 'rejected' || student.payment_status === 'pending_approval') && (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
               <h3 className="font-bold text-slate-900 text-base mb-1">
-                {student.payment_status === 'pending_approval' ? 'Update Payment Proof / TID' : 'Submit Payment Proof (Easypaisa)'}
+                {student.payment_status === 'pending_approval' ? 'Update Payment Proof / TID' : 'Submit Payment Proof'}
               </h3>
               <p className="text-xs text-slate-500 mb-5">
                 After transferring PKR 6,000/-, enter your Transaction ID (TID) and upload the receipt screenshot below.
