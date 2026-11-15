@@ -124,8 +124,8 @@ export default function RegistrationForm() {
         </div>
       </div>
 
-      {/* Main Registration Card - Ultra Glassmorphism */}
-      <div className="bg-white/55 backdrop-blur-md rounded-2xl border border-white/60 shadow-2xl p-4 sm:p-8 md:p-10">
+      {/* Main Registration Card - High Transparency so image shows through clearly */}
+      <div className="bg-white/35 backdrop-blur-sm rounded-2xl border border-white/50 shadow-2xl p-4 sm:p-8 md:p-10">
         <div className="border-b border-slate-100 pb-4 mb-5 sm:mb-6">
           <h2 className="text-base sm:text-lg font-bold text-slate-900">Student Registration Form</h2>
           <p className="text-[11px] sm:text-xs text-slate-500">Please enter accurate and verified details.</p>
@@ -142,8 +142,8 @@ export default function RegistrationForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Student Name */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Full Name <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                Full Name <span className="text-red-500 font-black">*</span>
               </label>
               <input
                 type="text"
@@ -158,8 +158,8 @@ export default function RegistrationForm() {
 
             {/* Roll Number */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                College Roll Number <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                College Roll Number <span className="text-red-500 font-black">*</span>
               </label>
               <input
                 type="text"
@@ -176,8 +176,8 @@ export default function RegistrationForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Student Phone */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Student Phone / WhatsApp <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                Student Phone / WhatsApp <span className="text-red-500 font-black">*</span>
               </label>
               <input
                 type="tel"
@@ -192,8 +192,8 @@ export default function RegistrationForm() {
 
             {/* Parent Phone */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Parent / Guardian Phone <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                Parent / Guardian Phone <span className="text-red-500 font-black">*</span>
               </label>
               <input
                 type="tel"
@@ -210,8 +210,8 @@ export default function RegistrationForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {/* Student Email */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Student Gmail / Email <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                Student Gmail / Email <span className="text-red-500 font-black">*</span>
               </label>
               <input
                 type="email"
@@ -226,8 +226,8 @@ export default function RegistrationForm() {
 
             {/* Degree / Department */}
             <div>
-              <label className="block text-[11px] sm:text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                Department / Program <span className="text-red-500">*</span>
+              <label className="block text-[11px] sm:text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                Department / Program <span className="text-red-500 font-black">*</span>
               </label>
               <select
                 name="department"
