@@ -60,8 +60,8 @@ export default function ChalanView({ student }: ChalanProps) {
         <div>
           <h4 className="font-bold text-xs sm:text-sm">Payment Instructions:</h4>
           <p className="mt-1 text-[11px] sm:text-xs text-amber-800 leading-relaxed">
-            Easypaisa app se niche diya gaya official QR code scan karke <strong>Rs. 6,000/-</strong> transfer karein. 
-            Transfer ke baad <strong>Transaction ID (TID)</strong> aur receipt screenshot save karke <strong>"Upload Proof"</strong> button ke zariye submit karein.
+            Scan the official QR code below using your Easypaisa application to transfer <strong>PKR 6,000/-</strong>. 
+            After completing the transfer, save your <strong>Transaction ID (TID)</strong> and receipt screenshot, then submit them via the <strong>"Upload Proof"</strong> button.
           </p>
         </div>
       </div>

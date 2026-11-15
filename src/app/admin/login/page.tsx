@@ -37,7 +37,7 @@ export default function AdminLogin() {
       router.push('/admin/dashboard');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Invalid email or password. Baraye mehrbani check karein.');
+      setError(err.message || 'Invalid email or password. Please verify your credentials.');
     } finally {
       setLoading(false);
     }

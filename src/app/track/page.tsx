@@ -41,7 +41,7 @@ function TrackContent() {
       if (error) throw error;
 
       if (!data) {
-        setError('Is Roll Number ya Chalan Number ke sath koi registration record nahi mila.');
+        setError('No registration record found for this Roll Number or Chalan Number.');
         setStudent(null);
       } else {
         setStudent(data);
@@ -55,7 +55,7 @@ function TrackContent() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Data load karne mein masla aya.');
+      setError(err.message || 'Error loading registration details.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ function TrackContent() {
     e.preventDefault();
     if (!student) return;
     if (!transactionId.trim()) {
-      alert('Transaction ID (TID) enter karna lazmi hai.');
+      alert('Transaction ID (TID) is required.');
       return;
     }
 
@@ -120,7 +120,7 @@ function TrackContent() {
       fetchStudent(student.roll_number);
     } catch (err: any) {
       console.error(err);
-      alert('Upload karne mein masla aya: ' + err.message);
+      alert('Error uploading payment proof: ' + err.message);
     } finally {
       setUploading(false);
     }
@@ -150,7 +150,7 @@ function TrackContent() {
           Check Registration & Chalan Status
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
-          Apna College Roll Number ya Chalan Number enter karke payment verification status check karein ya screenshot upload karein.
+          Enter your College Roll Number or Chalan Number to check fee verification status or upload your payment receipt.
         </p>
 
         <form onSubmit={handleSearch} className="mt-6 flex max-w-md mx-auto gap-2">
@@ -231,10 +231,10 @@ function TrackContent() {
               <div className="mt-5 p-5 bg-emerald-50/60 border border-emerald-200 rounded-xl">
                 <h3 className="font-bold text-emerald-900 text-base flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  Mubarak Ho! Aapki Registration Approve Ho Chuki Hai.
+                  Congratulations! Your Convocation Registration is Approved.
                 </h3>
                 <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                  Aapki fees Accounts department se verify ho chuki hai. Aap convocation rehearsal aur event day par apna Chalan slip ya Student ID card sath laa sakte hain.
+                  Your fee payment has been verified by the Accounts department. Please print and bring your approved chalan slip along with your student ID card on rehearsal and convocation days.
                 </p>
                 <div className="mt-4 flex gap-3">
                   <button
@@ -276,15 +276,15 @@ function TrackContent() {
           {(student.payment_status === 'pending_payment' || student.payment_status === 'rejected' || student.payment_status === 'pending_approval') && (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
               <h3 className="font-bold text-slate-900 text-base mb-1">
-                {student.payment_status === 'pending_approval' ? 'Update Payment Proof / TID' : 'Submit Payment Proof (JazzCash / Easypaisa)'}
+                {student.payment_status === 'pending_approval' ? 'Update Payment Proof / TID' : 'Submit Payment Proof (Easypaisa)'}
               </h3>
               <p className="text-xs text-slate-500 mb-5">
-                Rs. 6000 transfer karne ke baad Transaction ID (TID) aur payment ka screenshot yahan upload karein.
+                After transferring PKR 6,000/-, enter your Transaction ID (TID) and upload the receipt screenshot below.
               </p>
 
               {uploadSuccess && (
                 <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg font-medium">
-                  ✓ Payment proof kamyabi se submit ho gaya hai! Super Admin jald ise verify karega.
+                  ✓ Payment proof submitted successfully! Super Admin will review and verify your payment shortly.
                 </div>
               )}
 

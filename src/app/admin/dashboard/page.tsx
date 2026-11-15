@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   }, []);
 
   const handleApprove = async (id: string) => {
-    if (!confirm('Kya aap is student ki payment approve karna chahte hain?')) return;
+    if (!confirm('Are you sure you want to approve this student payment?')) return;
     setActionLoading(true);
     try {
       const { error } = await supabase
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
   const handleReject = async () => {
     if (!selectedStudent) return;
     if (!rejectReason.trim()) {
-      alert('Baraye mehrbani rejection ki waja likhein.');
+      alert('Please provide a reason for rejection.');
       return;
     }
     setActionLoading(true);

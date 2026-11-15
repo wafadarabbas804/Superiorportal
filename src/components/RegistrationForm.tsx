@@ -51,7 +51,7 @@ export default function RegistrationForm() {
     setError(null);
 
     if (!formData.fullName.trim() || !formData.rollNumber.trim() || !formData.studentPhone.trim()) {
-      setError('Tamam required fields enter karna lazmi hain.');
+      setError('Please fill in all required fields.');
       setLoading(false);
       return;
     }
@@ -96,7 +96,7 @@ export default function RegistrationForm() {
       setRegisteredStudent(data);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Registration submit karte waqt masla aya. Baraye mehrbani dubara koshish karein.');
+      setError(err.message || 'An error occurred while submitting registration. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -133,7 +133,7 @@ export default function RegistrationForm() {
         <div className="border-b border-slate-100 pb-4 mb-5 sm:mb-6 flex items-center justify-between gap-2">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900">Student Registration Form</h2>
-            <p className="text-[11px] sm:text-xs text-slate-500">Tamam details sahi aur dhyan se fill karein.</p>
+            <p className="text-[11px] sm:text-xs text-slate-500">Please enter accurate and verified details.</p>
           </div>
           <div className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0C7E81]/10 text-[#0C7E81] flex-shrink-0">
             <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

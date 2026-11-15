@@ -41,14 +41,6 @@ export default function Navbar() {
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-3">
             <Link 
-              href="/"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#0C7E81] hover:bg-[#0C7E81]/5 transition"
-            >
-              <UserPlus className="w-4 h-4 text-[#0C7E81]" />
-              <span>Register</span>
-            </Link>
-
-            <Link 
               href="/track"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 hover:text-[#0C7E81] hover:bg-[#0C7E81]/5 transition"
             >
@@ -89,14 +81,6 @@ export default function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-4 space-y-2 shadow-lg animate-in slide-in-from-top-2">
-          <Link
-            href="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-800 hover:bg-[#0C7E81]/10 hover:text-[#0C7E81] transition"
-          >
-            <UserPlus className="w-4 h-4 text-[#0C7E81]" />
-            <span>Register Student</span>
-          </Link>
           <Link
             href="/track"
             onClick={() => setMobileMenuOpen(false)}
