@@ -116,10 +116,6 @@ export default function AdminLogin() {
             )}
           </button>
         </form>
-
-        <div className="mt-6 pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-          Tip: You can use Supabase Auth credentials or demo (<code className="text-slate-600 font-mono">admin@superior.edu.pk / admin123</code>)
-        </div>
       </div>
     </div>
   );

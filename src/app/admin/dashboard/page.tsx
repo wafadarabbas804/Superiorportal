@@ -6,8 +6,11 @@ import Image from 'next/image';
 import { supabase, Registration } from '@/lib/supabase';
 import { 
   Users, CheckCircle2, Clock, XCircle, Search, Filter, 
-  ExternalLink, LogOut, Check, X, Eye, FileSpreadsheet, RefreshCw
+  ExternalLink, LogOut, Check, X, Eye, FileSpreadsheet, RefreshCw,
+  Award, Printer, Download, Loader2
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -20,9 +23,163 @@ export default function AdminDashboard() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [studentToApprove, setStudentToApprove] = useState<Registration | null>(null);
+  const [passStudent, setPassStudent] = useState<Registration | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!passStudent) return;
+
+    setDownloadingPdf(true);
+    try {
+      // Direct clean vector PDF via jsPDF without html2canvas parsing issues
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a5'
+      });
+
+      // Background card
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(8, 8, 132, 194, 4, 4, 'F');
+      doc.setDrawColor(12, 126, 129); // #0C7E81
+      doc.setLineWidth(0.8);
+      doc.roundedRect(8, 8, 132, 194, 4, 4, 'S');
+
+      // Header Banner
+      doc.setFillColor(12, 126, 129);
+      doc.roundedRect(12, 12, 124, 28, 3, 3, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('SUPERIOR COLLEGE WAZIRABAD', 74, 23, { align: 'center' });
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('CONVOCATION 2026 • OFFICIAL ENTRY PASS', 74, 30, { align: 'center' });
+
+      // Status Badge
+      doc.setFillColor(220, 252, 231); // emerald-100
+      doc.roundedRect(49, 34, 50, 5, 1, 1, 'F');
+      doc.setTextColor(22, 101, 52); // emerald-800
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('VERIFIED & ADMITTED', 74, 37.8, { align: 'center' });
+
+      // Student Details Container
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(12, 45, 124, 60, 2, 2, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(12, 45, 124, 60, 2, 2, 'S');
+
+      // Student Info Text
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('STUDENT NAME:', 18, 55);
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(passStudent.full_name.toUpperCase(), 18, 61);
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('ROLL NUMBER:', 80, 55);
+      doc.setTextColor(12, 126, 129);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(passStudent.roll_number, 80, 61);
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('DEPARTMENT:', 18, 75);
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(passStudent.department, 18, 81);
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('CHALAN REFERENCE:', 80, 75);
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(passStudent.chalan_no, 80, 81);
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('CONTACT PHONE:', 18, 93);
+      doc.setTextColor(51, 65, 85);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.text(passStudent.student_phone, 18, 98);
+
+      // Fee Paid Notice Box
+      doc.setFillColor(236, 253, 245);
+      doc.setDrawColor(167, 243, 208);
+      doc.roundedRect(12, 112, 124, 22, 2, 2, 'FD');
+      doc.setTextColor(6, 95, 70);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FEE STATUS: PKR 6,000/- PAID & VERIFIED', 74, 121, { align: 'center' });
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(4, 120, 87);
+      doc.text('Includes Gown Allocation, Degree Folder & Convocation Refreshment Pass', 74, 128, { align: 'center' });
+
+      // Event Rules
+      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Instructions for Entry:', 14, 142);
+      doc.text('1. Please bring this printed pass along with your Original Student ID Card.', 14, 147);
+      doc.text('2. Entry will be strictly subject to QR / verification verification at reception gate.', 14, 151);
+      doc.text('3. Gown distribution counter requires this pass stamped.', 14, 155);
+
+      // Signatures
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.4);
+      doc.line(20, 182, 55, 182);
+      doc.line(90, 182, 128, 182);
+
+      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(7.5);
+      doc.text('Student Signature', 37.5, 186, { align: 'center' });
+      doc.text('Controller of Convocation', 109, 186, { align: 'center' });
+
+      // Download PDF
+      doc.save(`Convocation_Pass_${passStudent.roll_number}.pdf`);
+    } catch (err: any) {
+      console.error(err);
+      alert('Error generating PDF: ' + err.message);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
+      // 1. Check if admin session exists
+      const { data: authData } = await supabase.auth.getSession();
+      const localAdmin = typeof window !== 'undefined' ? sessionStorage.getItem('superior_admin_logged_in') : null;
+
+      if (!authData.session && !localAdmin) {
+        // Not logged in -> kick to login page immediately
+        router.replace('/admin/login');
+        return;
+      }
+
+      setIsAuthenticated(true);
+
       const { data, error } = await supabase
         .from('convocation_registrations')
         .select('*')
@@ -45,7 +202,6 @@ export default function AdminDashboard() {
   }, []);
 
   const handleApprove = async (id: string) => {
-    if (!confirm('Are you sure you want to approve this student payment?')) return;
     setActionLoading(true);
     try {
       const { error } = await supabase
@@ -60,6 +216,7 @@ export default function AdminDashboard() {
       if (error) throw error;
       fetchRegistrations();
       setSelectedStudent(null);
+      setStudentToApprove(null);
     } catch (err: any) {
       alert('Error updating status: ' + err.message);
     } finally {
@@ -119,22 +276,32 @@ export default function AdminDashboard() {
     return matchesStatus && matchesSearch;
   });
 
+  if (!isAuthenticated && loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0C7E81] mx-auto mb-2" />
+          <p className="text-xs text-slate-500 font-medium">Verifying Admin Session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12">
-            <Image src="/superior-logo.png" alt="Logo" fill className="object-contain" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
-              SUPER ADMIN CONVOCATION DASHBOARD
-            </h1>
-            <p className="text-xs text-slate-500">
-              Superior College Wazirabad • Convocation 2026 Management
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">
+            SUPER ADMIN CONVOCATION DASHBOARD
+          </h1>
+          <p className="text-xs text-slate-500">
+            Superior College Wazirabad • Convocation 2026 Management
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -306,9 +473,20 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {item.payment_status === 'approved' && (
+                          <button
+                            onClick={() => setPassStudent(item)}
+                            className="px-2.5 py-1.5 rounded-lg bg-[#0C7E81] text-white hover:bg-[#096366] transition cursor-pointer flex items-center gap-1 font-semibold text-[11px]"
+                            title="Generate Entry Pass"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Generate Pass</span>
+                          </button>
+                        )}
+
                         {item.payment_status !== 'approved' && (
                           <button
-                            onClick={() => handleApprove(item.id)}
+                            onClick={() => setStudentToApprove(item)}
                             className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
                             title="Approve Payment"
                           >
@@ -392,7 +570,7 @@ export default function AdminDashboard() {
                 Reject Proof
               </button>
               <button
-                onClick={() => handleApprove(selectedStudent.id)}
+                onClick={() => setStudentToApprove(selectedStudent)}
                 disabled={actionLoading}
                 className="px-4 py-2 text-xs font-bold text-white bg-[#0C7E81] hover:bg-[#096366] rounded-lg cursor-pointer flex items-center gap-1.5"
               >
@@ -436,6 +614,154 @@ export default function AdminDashboard() {
                 className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer"
               >
                 Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Approval Confirmation Modal */}
+      {passStudent && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setPassStudent(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 no-print cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Print & Action Buttons */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4 no-print">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Official Entry Card</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={downloadingPdf}
+                  className="px-3.5 py-1.5 bg-[#0C7E81] text-white text-xs font-bold rounded-lg hover:bg-[#096366] transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+                >
+                  {downloadingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{downloadingPdf ? 'Saving...' : 'Download PDF'}</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-200 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Pass Card */}
+            <div id="printable-pass-card" className="border-2 border-[#0C7E81] rounded-2xl p-6 bg-gradient-to-b from-[#0C7E81]/5 via-white to-[#0C7E81]/10 relative overflow-hidden">
+              <div className="flex items-center gap-3.5 border-b border-slate-200 pb-3 mb-4">
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  <Image src="/superior-logo.png" alt="Logo" fill className="object-contain" priority />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-black text-sm uppercase text-[#0C7E81]">
+                    Superior College Wazirabad
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-700 tracking-wide uppercase">
+                    Annual Convocation 2026 • Official Entry Pass
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px] uppercase tracking-wider">
+                    ✓ Verified & Admitted
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs mb-4 bg-white/90 p-3 rounded-xl border border-slate-200/80">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Student Name</span>
+                  <span className="font-bold text-slate-900 text-sm">{passStudent.full_name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Roll Number</span>
+                  <span className="font-mono font-black text-[#0C7E81] text-sm">{passStudent.roll_number}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Department</span>
+                  <span className="font-medium text-slate-700 truncate block">{passStudent.department}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Chalan Reference</span>
+                  <span className="font-mono text-slate-800 font-bold">{passStudent.chalan_no}</span>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center mb-4">
+                <p className="text-xs font-bold text-emerald-800">
+                  Fee Status: PKR 6,000/- PAID & VERIFIED
+                </p>
+                <p className="text-[10px] text-emerald-600 mt-0.5">
+                  Includes Gown Allocation, Degree Folder & Convocation Refreshment Pass
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-dashed border-slate-300 flex justify-between items-end text-[10px] text-slate-400">
+                <div className="text-center">
+                  <div className="w-24 border-b border-slate-300 mb-1"></div>
+                  <span>Student Sign</span>
+                </div>
+                <div className="text-center">
+                  <div className="w-24 border-b border-slate-300 mb-1"></div>
+                  <span>Controller of Convocation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Approval Confirmation Modal */}
+      {studentToApprove && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900">Confirm Payment Approval</h3>
+                <p className="text-xs text-slate-500">Superior College Accounts Verification</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Are you sure you want to mark payment as verified for <strong className="text-slate-900">{studentToApprove.full_name}</strong> (Roll: <span className="font-mono text-[#0C7E81] font-bold">{studentToApprove.roll_number}</span>)?
+            </p>
+
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 mb-5 text-xs space-y-1 font-mono">
+              <div className="flex justify-between text-slate-600">
+                <span>Chalan No:</span>
+                <span className="font-bold text-slate-900">{studentToApprove.chalan_no}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Amount:</span>
+                <span className="font-bold text-emerald-700">PKR 6,000/-</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5">
+              <button
+                onClick={() => setStudentToApprove(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleApprove(studentToApprove.id)}
+                disabled={actionLoading}
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                <span>Confirm & Approve</span>
               </button>
             </div>
           </div>

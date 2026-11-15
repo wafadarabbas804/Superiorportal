@@ -4,9 +4,10 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase, Registration } from '@/lib/supabase';
-import { Search, Loader2, CheckCircle2, Clock, XCircle, Upload, FileText, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, Clock, XCircle, Upload, FileText, ArrowRight, ShieldAlert, Award, Download, Printer, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ChalanView from '@/components/ChalanView';
+import { generateConvocationPdf } from '@/lib/pdfGenerator';
 
 function TrackContent() {
   const searchParams = useSearchParams();
@@ -23,6 +24,7 @@ function TrackContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [showFullChalan, setShowFullChalan] = useState(false);
+  const [showPassModal, setShowPassModal] = useState(false);
 
   const fetchStudent = async (searchRoll: string) => {
     if (!searchRoll.trim()) return;
@@ -45,6 +47,7 @@ function TrackContent() {
         setStudent(null);
       } else {
         setStudent(data);
+        setTransactionId(data.transaction_id || '');
         if (data.payment_status === 'approved') {
           confetti({
             particleCount: 80,
@@ -228,21 +231,37 @@ function TrackContent() {
 
             {/* Approved Message & Convocation Pass */}
             {student.payment_status === 'approved' && (
-              <div className="mt-5 p-5 bg-emerald-50/60 border border-emerald-200 rounded-xl">
+              <div className="mt-5 p-5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
                 <h3 className="font-bold text-emerald-900 text-base flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   Congratulations! Your Convocation Registration is Approved.
                 </h3>
                 <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
-                  Your fee payment has been verified by the Accounts department. Please print and bring your approved chalan slip along with your student ID card on rehearsal and convocation days.
+                  Your fee payment has been verified by the Accounts department. Your official <strong>Convocation Entry Pass</strong> is ready. Please download or print your pass to present at the event.
                 </p>
-                <div className="mt-4 flex gap-3">
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <button
+                    onClick={() => setShowPassModal(true)}
+                    className="px-4 py-2 bg-[#0C7E81] text-white text-xs font-bold rounded-lg hover:bg-[#096366] transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Award className="w-4 h-4" />
+                    <span>View Convocation Pass</span>
+                  </button>
+
+                  <button
+                    onClick={() => generateConvocationPdf(student)}
+                    className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Pass (PDF)</span>
+                  </button>
+
                   <button
                     onClick={() => setShowFullChalan(true)}
-                    className="px-4 py-2 bg-[#0C7E81] text-white text-xs font-bold rounded-lg hover:bg-[#096366] transition flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-2 bg-white text-slate-700 border border-slate-300 text-xs font-semibold rounded-lg hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
                   >
-                    <FileText className="w-4 h-4" />
-                    <span>View / Print Approved Slip</span>
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    <span>View Original Chalan</span>
                   </button>
                 </div>
               </div>
@@ -298,21 +317,47 @@ function TrackContent() {
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
                     placeholder="e.g. 12938475620 (optional if screenshot attached)"
-                    defaultValue={student.transaction_id || ''}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-sm font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                    Upload Payment Screenshot (JPG, PNG)
+                  <label className="block text-xs font-semibold text-slate-700 uppercase mb-2">
+                    Payment Receipt Screenshot (JPG, PNG)
                   </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-600 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#0C7E81]/10 file:text-[#0C7E81] hover:file:bg-[#0C7E81]/20 cursor-pointer"
-                  />
+                  
+                  <div className="relative border-2 border-dashed border-slate-300 hover:border-[#0C7E81] rounded-xl p-4 sm:p-6 text-center transition bg-slate-50/50 hover:bg-[#0C7E81]/5 cursor-pointer group">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    
+                    {file ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-emerald-100 text-emerald-700">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{(file.size / 1024).toFixed(1)} KB • Ready to submit</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="p-3 rounded-full bg-[#0C7E81]/10 text-[#0C7E81] group-hover:scale-110 transition-transform mb-2">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-700">
+                          Click to browse or drag and drop receipt screenshot
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Supported formats: JPG, PNG, WebP (Max: 5MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {student.screenshot_url && (
@@ -349,6 +394,99 @@ function TrackContent() {
               </form>
             </div>
           )}
+        </div>
+      )}
+      {/* Student Convocation Entry Pass Modal */}
+      {showPassModal && student && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowPassModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 no-print cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Print & Action Buttons */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4 no-print">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Official Entry Card</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => generateConvocationPdf(student)}
+                  className="px-3.5 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-[#0C7E81] text-white text-xs font-bold rounded-lg hover:bg-[#096366] transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Pass Card */}
+            <div className="border-2 border-[#0C7E81] rounded-2xl p-6 bg-gradient-to-b from-[#0C7E81]/5 via-white to-[#0C7E81]/10 relative overflow-hidden">
+              <div className="flex items-center gap-3.5 border-b border-slate-200 pb-3 mb-4">
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  <Image src="/superior-logo.png" alt="Logo" fill className="object-contain" priority />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-black text-sm uppercase text-[#0C7E81]">
+                    Superior College Wazirabad
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-700 tracking-wide uppercase">
+                    Annual Convocation 2026 • Official Entry Pass
+                  </p>
+                  <span className="inline-block mt-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px] uppercase tracking-wider">
+                    ✓ Verified & Admitted
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs mb-4 bg-white/90 p-3 rounded-xl border border-slate-200/80">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Student Name</span>
+                  <span className="font-bold text-slate-900 text-sm">{student.full_name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Roll Number</span>
+                  <span className="font-mono font-black text-[#0C7E81] text-sm">{student.roll_number}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Department</span>
+                  <span className="font-medium text-slate-700 truncate block">{student.department}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Chalan Reference</span>
+                  <span className="font-mono text-slate-800 font-bold">{student.chalan_no}</span>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center mb-4">
+                <p className="text-xs font-bold text-emerald-800">
+                  Fee Status: PKR 6,000/- PAID & VERIFIED
+                </p>
+                <p className="text-[10px] text-emerald-600 mt-0.5">
+                  Includes Gown Allocation, Degree Folder & Convocation Refreshment Pass
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-dashed border-slate-300 flex justify-between items-end text-[10px] text-slate-400">
+                <div className="text-center">
+                  <div className="w-24 border-b border-slate-300 mb-1"></div>
+                  <span>Student Sign</span>
+                </div>
+                <div className="text-center">
+                  <div className="w-24 border-b border-slate-300 mb-1"></div>
+                  <span>Controller of Convocation</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

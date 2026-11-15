@@ -24,16 +24,29 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body 
         suppressHydrationWarning
-        className="antialiased flex flex-col min-h-screen bg-slate-50 text-slate-900"
+        className="antialiased flex flex-col min-h-screen text-slate-900"
       >
+        {/* Fullscreen Fixed Single Background Image (Never Repeats) */}
+        <div 
+          className="fixed inset-0 pointer-events-none -z-20 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: "url('/campus-bg.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
+            backgroundRepeat: "no-repeat"
+          }}
+        />
+        {/* Subtle white lighting tint */}
+        <div className="fixed inset-0 bg-white/20 pointer-events-none -z-10" />
+
         <SecurityShield />
-        <div className="no-print">
+        <div className="no-print sticky top-0 z-50">
           <Navbar />
         </div>
         <main className="flex-1">{children}</main>
-        <footer className="no-print bg-[#0C7E81] text-white py-8 border-t border-[#096366]">
+        <footer className="no-print bg-[#0C7E81] text-white py-6 border-t border-[#096366]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-white/20 pb-6 text-center md:text-left">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
               {/* College Logo & Info */}
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <div className="relative w-16 h-16 bg-white rounded-full p-1.5 shadow-md flex-shrink-0">
@@ -66,12 +79,6 @@ export default function RootLayout({
                   <p>📞 Phone: <span className="font-mono font-semibold">0314-7206680</span></p>
                 </div>
               </div>
-            </div>
-
-            {/* Copyright */}
-            <div className="pt-4 text-center text-xs text-white flex flex-col sm:flex-row items-center justify-between gap-2">
-              <p>© 2026 Superior Group of Colleges Wazirabad Campus. All Rights Reserved.</p>
-              <p className="text-[11px] text-white/90">For fee & registration queries, contact Accounts Office.</p>
             </div>
           </div>
         </footer>

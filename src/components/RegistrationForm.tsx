@@ -107,38 +107,28 @@ export default function RegistrationForm() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-6 sm:py-12">
-      {/* College Banner Header */}
-      <div className="text-center mb-6 sm:mb-8">
-        <div className="inline-flex p-2.5 sm:p-3 rounded-2xl bg-white shadow-xs border border-slate-100 mb-3">
-          <Image 
-            src="/superior-logo.png" 
-            alt="Superior Logo" 
-            width={75} 
-            height={75} 
-            className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-            priority 
-          />
+    <div className="w-full max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      {/* College Banner Header - Subtle Frosted Glass Badge */}
+      <div className="text-center mb-6">
+        <div className="inline-block bg-white/30 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xl border border-white/50">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0C7E81] tracking-tight">
+            Superior College Wazirabad
+          </h1>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <span className="h-px w-6 bg-[#0C7E81]/40"></span>
+            <p className="text-xs sm:text-sm text-slate-900 font-extrabold uppercase tracking-wider">
+              Annual Convocation 2026 Registration
+            </p>
+            <span className="h-px w-6 bg-[#0C7E81]/40"></span>
+          </div>
         </div>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#0C7E81] tracking-tight">
-          Superior College Wazirabad
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-          Convocation Registration Form
-        </p>
       </div>
 
-      {/* Main Registration Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-8 md:p-10">
-        <div className="border-b border-slate-100 pb-4 mb-5 sm:mb-6 flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Student Registration Form</h2>
-            <p className="text-[11px] sm:text-xs text-slate-500">Please enter accurate and verified details.</p>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#0C7E81]/10 text-[#0C7E81] flex-shrink-0">
-            <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Batch 2026</span>
-          </div>
+      {/* Main Registration Card - Ultra Glassmorphism */}
+      <div className="bg-white/55 backdrop-blur-md rounded-2xl border border-white/60 shadow-2xl p-4 sm:p-8 md:p-10">
+        <div className="border-b border-slate-100 pb-4 mb-5 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">Student Registration Form</h2>
+          <p className="text-[11px] sm:text-xs text-slate-500">Please enter accurate and verified details.</p>
         </div>
 
         {error && (
@@ -162,7 +152,7 @@ export default function RegistrationForm() {
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="e.g. Muhammad Ali"
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm transition"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 transition"
               />
             </div>
 
@@ -178,7 +168,7 @@ export default function RegistrationForm() {
                 value={formData.rollNumber}
                 onChange={handleChange}
                 placeholder="e.g. BSCS-22-105"
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono transition"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono font-medium text-slate-900 placeholder:text-slate-500 transition"
               />
             </div>
           </div>
@@ -196,7 +186,7 @@ export default function RegistrationForm() {
                 value={formData.studentPhone}
                 onChange={handleChange}
                 placeholder="03001234567"
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono transition"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono font-medium text-slate-900 placeholder:text-slate-500 transition"
               />
             </div>
 
@@ -212,7 +202,7 @@ export default function RegistrationForm() {
                 value={formData.parentPhone}
                 onChange={handleChange}
                 placeholder="03009876543"
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono transition"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-mono font-medium text-slate-900 placeholder:text-slate-500 transition"
               />
             </div>
           </div>
@@ -230,7 +220,7 @@ export default function RegistrationForm() {
                 value={formData.studentEmail}
                 onChange={handleChange}
                 placeholder="student@gmail.com"
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm transition"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-500 transition"
               />
             </div>
 
@@ -243,7 +233,7 @@ export default function RegistrationForm() {
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm transition bg-white"
+                className="w-full px-3.5 py-2 sm:py-2.5 rounded-lg border border-slate-300/80 bg-white/40 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-xs sm:text-sm font-medium text-slate-900 transition"
               >
                 {DEPARTMENTS.map((dept) => (
                   <option key={dept} value={dept}>
