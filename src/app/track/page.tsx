@@ -75,8 +75,8 @@ function TrackContent() {
   const handleUploadProof = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student) return;
-    if (!transactionId.trim()) {
-      alert('Transaction ID (TID) is required.');
+    if (!transactionId.trim() && !file) {
+      alert('Please enter a Transaction ID (TID) or upload a payment screenshot.');
       return;
     }
 
@@ -291,14 +291,13 @@ function TrackContent() {
               <form onSubmit={handleUploadProof} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
-                    Transaction ID (TID / Trx ID) <span className="text-red-500">*</span>
+                    Transaction ID (TID / Trx ID) <span className="text-slate-400 font-normal lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
-                    required
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="e.g. 12938475620 ya TID number"
+                    placeholder="e.g. 12938475620 (optional if screenshot attached)"
                     defaultValue={student.transaction_id || ''}
                     className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-sm font-mono"
                   />
