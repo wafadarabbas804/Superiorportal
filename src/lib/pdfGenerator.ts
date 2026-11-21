@@ -120,7 +120,7 @@ export function generateConvocationPdf(student: Registration) {
   doc.setTextColor(148, 163, 184);
   doc.setFontSize(7.5);
   doc.text('Student Signature', 37.5, 186, { align: 'center' });
-  doc.text('Controller of Convocation', 109, 186, { align: 'center' });
+  doc.text('Account Office', 109, 186, { align: 'center' });
 
   doc.save(`Convocation_Pass_${student.roll_number}.pdf`);
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { ShieldCheck, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { validateAndSanitizeEmail } from '@/lib/sanitize';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -18,15 +19,22 @@ export default function AdminLogin() {
     setLoading(true);
     setError(null);
 
+    const emailCheck = validateAndSanitizeEmail(email);
+    if (!emailCheck.valid) {
+      setError(emailCheck.error || 'Please enter a valid admin email.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: emailCheck.value,
         password: password,
       });
 
       if (error) {
         // Fallback for simple local demo / testing if auth user not created yet
-        if (email === 'admin@superior.edu.pk' && password === 'admin123') {
+        if (emailCheck.value === 'admin@superior.edu.pk' && password === 'admin123') {
           sessionStorage.setItem('superior_admin_logged_in', 'true');
           router.push('/admin/dashboard');
           return;
@@ -38,7 +46,6 @@ export default function AdminLogin() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Invalid email or password. Please verify your credentials.');
-    } finally {
       setLoading(false);
     }
   };
@@ -75,7 +82,7 @@ export default function AdminLogin() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@superiorwazirabad.edu.pk"
+                placeholder="Enter Admin Email"
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-sm"
               />
             </div>

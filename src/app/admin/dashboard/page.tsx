@@ -1,22 +1,43 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { supabase, Registration } from '@/lib/supabase';
+import ExportToolbar from '@/components/ExportToolbar';
+import WhatsAppModal from '@/components/WhatsAppModal';
+import { sanitizeText } from '@/lib/sanitize';
 import { 
   Users, CheckCircle2, Clock, XCircle, Search, Filter, 
   ExternalLink, LogOut, Check, X, Eye, FileSpreadsheet, RefreshCw,
-  Award, Printer, Download, Loader2
+  Award, Printer, Download, Loader2, ChevronDown, GraduationCap
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+
+const DEPARTMENTS = [
+  'BS Computer Science (BSCS)',
+  'BS Information Technology (BSIT)',
+  'BS Software Engineering (BSSE)',
+  'Bachelor of Business Administration (BBA)',
+  'BS English',
+  'BS Mathematics',
+  'Bachelor of Science in Zoology',
+];
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [deptFilterSearch, setDeptFilterSearch] = useState<string>('');
+  const [isDeptDropdownOpen, setIsDeptDropdownOpen] = useState(false);
+  const deptDropdownRef = useRef<HTMLDivElement>(null);
+  const deptInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [whatsAppStudent, setWhatsAppStudent] = useState<Registration | null>(null);
+  const [whatsAppDefaultReason, setWhatsAppDefaultReason] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Registration | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -26,6 +47,7 @@ export default function AdminDashboard() {
   const [studentToApprove, setStudentToApprove] = useState<Registration | null>(null);
   const [passStudent, setPassStudent] = useState<Registration | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleDownloadPdf = async () => {
@@ -153,7 +175,7 @@ export default function AdminDashboard() {
       doc.setTextColor(148, 163, 184);
       doc.setFontSize(7.5);
       doc.text('Student Signature', 37.5, 186, { align: 'center' });
-      doc.text('Controller of Convocation', 109, 186, { align: 'center' });
+      doc.text('Account Office', 109, 186, { align: 'center' });
 
       // Download PDF
       doc.save(`Convocation_Pass_${passStudent.roll_number}.pdf`);
@@ -226,8 +248,9 @@ export default function AdminDashboard() {
 
   const handleReject = async () => {
     if (!selectedStudent) return;
-    if (!rejectReason.trim()) {
-      alert('Please provide a reason for rejection.');
+    const cleanReason = sanitizeText(rejectReason, 200);
+    if (!cleanReason) {
+      alert('Please provide a valid reason for rejection.');
       return;
     }
     setActionLoading(true);
@@ -236,7 +259,7 @@ export default function AdminDashboard() {
         .from('convocation_registrations')
         .update({
           payment_status: 'rejected',
-          rejection_reason: rejectReason.trim()
+          rejection_reason: cleanReason
         })
         .eq('id', selectedStudent.id);
 
@@ -253,10 +276,45 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('superior_admin_logged_in');
-    router.push('/admin/login');
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      sessionStorage.removeItem('superior_admin_logged_in');
+      router.push('/admin/login');
+    } finally {
+      setLoggingOut(false);
+    }
   };
+
+  // Close department dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (deptDropdownRef.current && !deptDropdownRef.current.contains(e.target as Node)) {
+        setIsDeptDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Auto focus search input when department dropdown opens
+  useEffect(() => {
+    if (isDeptDropdownOpen && deptInputRef.current) {
+      deptInputRef.current.focus();
+    }
+  }, [isDeptDropdownOpen]);
+
+  // Unique list of all departments (predefined + any historical in DB)
+  const availableDepartments = Array.from(
+    new Set([
+      ...DEPARTMENTS,
+      ...registrations.map(r => r.department).filter(Boolean)
+    ])
+  );
+
+  const filteredDepartments = availableDepartments.filter(dept =>
+    dept.toLowerCase().includes(deptFilterSearch.toLowerCase())
+  );
 
   // Stats calculation
   const totalStudents = registrations.length;
@@ -268,13 +326,39 @@ export default function AdminDashboard() {
   // Filtered List
   const filtered = registrations.filter(r => {
     const matchesStatus = filterStatus === 'all' || r.payment_status === filterStatus;
+    const matchesDepartment = filterDepartment === 'all' || r.department === filterDepartment;
     const matchesSearch = 
       r.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       r.roll_number?.toLowerCase().includes(search.toLowerCase()) ||
       r.chalan_no?.toLowerCase().includes(search.toLowerCase()) ||
-      r.transaction_id?.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
+      r.transaction_id?.toLowerCase().includes(search.toLowerCase()) ||
+      r.department?.toLowerCase().includes(search.toLowerCase());
+    return matchesStatus && matchesDepartment && matchesSearch;
   });
+
+  // Selection logic for export
+  const isAllFilteredSelected = filtered.length > 0 && filtered.every(item => selectedIds.includes(item.id));
+
+  const handleSelectAllFiltered = () => {
+    if (isAllFilteredSelected) {
+      setSelectedIds(prev => prev.filter(id => !filtered.some(f => f.id === id)));
+    } else {
+      const merged = new Set([...selectedIds, ...filtered.map(f => f.id)]);
+      setSelectedIds(Array.from(merged));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const handleToggleRow = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectedStudents = registrations.filter(r => selectedIds.includes(r.id));
 
   if (!isAuthenticated && loading) {
     return (
@@ -307,17 +391,24 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchRegistrations}
-            className="p-2 text-slate-600 hover:text-[#0C7E81] hover:bg-slate-100 rounded-lg transition"
-            title="Refresh list"
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-[#0C7E81] hover:text-[#0C7E81] transition shadow-xs disabled:opacity-50 cursor-pointer"
+            title="Refresh registrations list"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#0C7E81] ${loading ? 'animate-spin' : ''}`} />
+            <span>{loading ? 'Refreshing...' : 'Refresh List'}</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition cursor-pointer"
+            disabled={loggingOut}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 transition shadow-xs cursor-pointer disabled:opacity-50"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
+            {loggingOut ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <LogOut className="w-3.5 h-3.5" />
+            )}
+            <span>{loggingOut ? 'Signing Out...' : 'Sign Out'}</span>
           </button>
         </div>
       </div>
@@ -378,21 +469,154 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-xs border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0C7E81]"
-          >
-            <option value="all">All Registrations</option>
-            <option value="pending_approval">Pending Approval (Screenshots)</option>
-            <option value="approved">Approved</option>
-            <option value="pending_payment">Pending Payment</option>
-            <option value="rejected">Rejected</option>
-          </select>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Searchable Department Dropdown Filter */}
+          <div className="relative" ref={deptDropdownRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDeptDropdownOpen(!isDeptDropdownOpen);
+                setDeptFilterSearch('');
+              }}
+              className={`text-xs border rounded-lg px-3 py-1.5 bg-white text-slate-700 flex items-center gap-1.5 transition cursor-pointer hover:border-[#0C7E81] ${
+                filterDepartment !== 'all'
+                  ? 'border-[#0C7E81] bg-[#0C7E81]/5 text-[#0C7E81] font-bold ring-1 ring-[#0C7E81]'
+                  : 'border-slate-300'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
+              <span className="max-w-[160px] sm:max-w-[190px] truncate">
+                {filterDepartment === 'all' ? 'All Departments' : filterDepartment}
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isDeptDropdownOpen ? 'rotate-180 text-[#0C7E81]' : ''}`} />
+            </button>
+
+            {/* Department Dropdown Menu */}
+            {isDeptDropdownOpen && (
+              <div className="absolute right-0 sm:left-0 top-full mt-1.5 w-64 bg-white rounded-xl border border-slate-200 shadow-xl z-50 p-2 animate-in fade-in zoom-in-95 duration-150">
+                {/* Search Box inside Dropdown */}
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    ref={deptInputRef}
+                    type="text"
+                    value={deptFilterSearch}
+                    onChange={(e) => setDeptFilterSearch(e.target.value)}
+                    placeholder="Search department..."
+                    className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-slate-800 placeholder:text-slate-400 font-medium"
+                  />
+                </div>
+
+                {/* Options List */}
+                <div className="max-h-52 overflow-y-auto space-y-0.5 pr-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterDepartment('all');
+                      setIsDeptDropdownOpen(false);
+                      setDeptFilterSearch('');
+                    }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition cursor-pointer ${
+                      filterDepartment === 'all'
+                        ? 'bg-[#0C7E81] text-white font-bold'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>All Departments</span>
+                    {filterDepartment === 'all' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {filteredDepartments.length === 0 ? (
+                    <div className="py-3 text-center text-xs text-slate-400">
+                      No matching department
+                    </div>
+                  ) : (
+                    filteredDepartments.map((dept) => {
+                      const isSelected = filterDepartment === dept;
+                      return (
+                        <button
+                          key={dept}
+                          type="button"
+                          onClick={() => {
+                            setFilterDepartment(dept);
+                            setIsDeptDropdownOpen(false);
+                            setDeptFilterSearch('');
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0C7E81] text-white font-bold'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="truncate pr-1">{dept}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+
+                {filterDepartment !== 'all' && (
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterDepartment('all');
+                        setIsDeptDropdownOpen(false);
+                        setDeptFilterSearch('');
+                      }}
+                      className="text-[11px] text-red-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Clear Department Filter
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="text-xs border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] cursor-pointer"
+            >
+              <option value="all">All Registrations</option>
+              <option value="pending_approval">Pending Approval (Screenshots)</option>
+              <option value="approved">Approved</option>
+              <option value="pending_payment">Pending Payment</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          {(filterDepartment !== 'all' || filterStatus !== 'all' || search) && (
+            <button
+              onClick={() => {
+                setFilterDepartment('all');
+                setFilterStatus('all');
+                setSearch('');
+              }}
+              className="text-xs text-slate-500 hover:text-red-600 transition flex items-center gap-1 font-medium cursor-pointer"
+              title="Clear all filters"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Export Toolbar Component */}
+      <ExportToolbar
+        selectedStudents={selectedStudents}
+        allFilteredStudents={filtered}
+        filterDepartment={filterDepartment}
+        onSelectAllFiltered={handleSelectAllFiltered}
+        onClearSelection={handleClearSelection}
+        isAllFilteredSelected={isAllFilteredSelected}
+      />
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -400,6 +624,15 @@ export default function AdminDashboard() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
               <tr>
+                <th className="py-3.5 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={isAllFilteredSelected}
+                    onChange={handleSelectAllFiltered}
+                    className="w-4 h-4 rounded border-slate-300 text-[#0C7E81] focus:ring-[#0C7E81] cursor-pointer"
+                    title="Select / Deselect all in view"
+                  />
+                </th>
                 <th className="py-3.5 px-4">Student & Roll No</th>
                 <th className="py-3.5 px-4">Department</th>
                 <th className="py-3.5 px-4">Contact</th>
@@ -412,17 +645,30 @@ export default function AdminDashboard() {
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
                     Koi registration record nahi mila.
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{item.full_name}</div>
-                      <div className="text-[11px] font-mono text-[#0C7E81]">{item.roll_number}</div>
-                    </td>
+                filtered.map((item) => {
+                  const isRowSelected = selectedIds.includes(item.id);
+                  return (
+                    <tr 
+                      key={item.id} 
+                      className={`transition ${isRowSelected ? 'bg-[#0C7E81]/10 font-medium' : 'hover:bg-slate-50/80'}`}
+                    >
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isRowSelected}
+                          onChange={() => handleToggleRow(item.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-[#0C7E81] focus:ring-[#0C7E81] cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">{item.full_name}</div>
+                        <div className="text-[11px] font-mono text-[#0C7E81]">{item.roll_number}</div>
+                      </td>
                     <td className="py-3 px-4 text-slate-600 truncate max-w-[150px]">
                       {item.department}
                     </td>
@@ -473,6 +719,21 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {/* Send WhatsApp Notice */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWhatsAppStudent(item);
+                            setWhatsAppDefaultReason(item.rejection_reason || undefined);
+                          }}
+                          className="p-1.5 rounded-lg bg-[#25D366]/15 text-[#128C7E] hover:bg-[#25D366] hover:text-white transition cursor-pointer"
+                          title="Send Official WhatsApp Notice"
+                        >
+                          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.888 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                          </svg>
+                        </button>
+
                         {item.payment_status === 'approved' && (
                           <button
                             onClick={() => setPassStudent(item)}
@@ -508,7 +769,8 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
@@ -565,17 +827,27 @@ export default function AdminDashboard() {
                 onClick={() => {
                   setShowRejectModal(true);
                 }}
-                className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer"
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer disabled:opacity-50"
               >
                 Reject Proof
               </button>
               <button
                 onClick={() => setStudentToApprove(selectedStudent)}
                 disabled={actionLoading}
-                className="px-4 py-2 text-xs font-bold text-white bg-[#0C7E81] hover:bg-[#096366] rounded-lg cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 text-xs font-bold text-white bg-[#0C7E81] hover:bg-[#096366] rounded-lg cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Check className="w-4 h-4" />
-                <span>Approve & Mark Paid</span>
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Approve & Mark Paid</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -604,16 +876,24 @@ export default function AdminDashboard() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReject}
                 disabled={actionLoading}
-                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
-                Confirm Reject
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Rejecting...</span>
+                  </>
+                ) : (
+                  <span>Confirm Reject</span>
+                )}
               </button>
             </div>
           </div>
@@ -711,7 +991,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="text-center">
                   <div className="w-24 border-b border-slate-300 mb-1"></div>
-                  <span>Controller of Convocation</span>
+                  <span>Account Office</span>
                 </div>
               </div>
             </div>
@@ -751,21 +1031,43 @@ export default function AdminDashboard() {
             <div className="flex justify-end gap-2.5">
               <button
                 onClick={() => setStudentToApprove(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleApprove(studentToApprove.id)}
                 disabled={actionLoading}
-                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Check className="w-4 h-4" />
-                <span>Confirm & Approve</span>
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Approving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Confirm & Approve</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Official WhatsApp Notice Modal */}
+      {whatsAppStudent && (
+        <WhatsAppModal
+          student={whatsAppStudent}
+          defaultReason={whatsAppDefaultReason}
+          onClose={() => {
+            setWhatsAppStudent(null);
+            setWhatsAppDefaultReason(undefined);
+          }}
+        />
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { Search, Loader2, CheckCircle2, Clock, XCircle, Upload, FileText, ArrowR
 import confetti from 'canvas-confetti';
 import ChalanView from '@/components/ChalanView';
 import { generateConvocationPdf } from '@/lib/pdfGenerator';
+import { sanitizeText, sanitizeTransactionId, validateUploadFile } from '@/lib/sanitize';
 
 function TrackContent() {
   const searchParams = useSearchParams();
@@ -25,6 +26,18 @@ function TrackContent() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [showFullChalan, setShowFullChalan] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async (studentData: Registration) => {
+    setDownloadingPdf(true);
+    try {
+      await generateConvocationPdf(studentData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const fetchStudent = async (searchRoll: string) => {
     if (!searchRoll.trim()) return;
@@ -72,15 +85,26 @@ function TrackContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchStudent(query);
+    const cleanQuery = sanitizeText(query, 30);
+    fetchStudent(cleanQuery);
   };
 
   const handleUploadProof = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student) return;
-    if (!transactionId.trim() && !file) {
+
+    const cleanTid = sanitizeTransactionId(transactionId);
+    if (!cleanTid && !file) {
       alert('Please enter a Transaction ID (TID) or upload a payment screenshot.');
       return;
+    }
+
+    if (file) {
+      const fileValidation = validateUploadFile(file);
+      if (!fileValidation.valid) {
+        alert(fileValidation.error);
+        return;
+      }
     }
 
     setUploading(true);
@@ -89,7 +113,7 @@ function TrackContent() {
 
       // 1. Upload screenshot to Supabase Storage if file selected
       if (file) {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
         const fileName = `${student.roll_number}_${Date.now()}.${fileExt}`;
         const filePath = `receipts/${fileName}`;
 
@@ -107,11 +131,11 @@ function TrackContent() {
         }
       }
 
-      // 2. Update record in database
+      // 2. Update record in database with sanitized data
       const { error: updateErr } = await supabase
         .from('convocation_registrations')
         .update({
-          transaction_id: transactionId.trim(),
+          transaction_id: cleanTid,
           screenshot_url: screenshotUrl || `https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400`,
           payment_status: 'pending_approval'
         })
@@ -147,12 +171,12 @@ function TrackContent() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      {/* Search Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+      {/* Search Header Card */}
+      <div className="bg-white/90 backdrop-blur-md border border-white/60 shadow-xl rounded-2xl p-6 sm:p-8 text-center mb-8">
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
           Check Registration & Chalan Status
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md mx-auto">
+        <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1.5 max-w-md mx-auto">
           Enter your College Roll Number or Chalan Number to check fee verification status or upload your payment receipt.
         </p>
 
@@ -163,14 +187,14 @@ function TrackContent() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter Roll No (e.g. BSCS-22-105)"
-              className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-sm font-mono uppercase"
+              className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#0C7E81] text-sm font-mono uppercase font-semibold text-slate-900 placeholder:text-slate-400 shadow-xs"
               required
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 bg-[#0C7E81] text-white font-semibold rounded-xl hover:bg-[#096366] transition flex items-center gap-1.5 text-sm cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#0C7E81] text-white font-bold rounded-xl hover:bg-[#096366] transition flex items-center gap-1.5 text-sm cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
             <span>Search</span>
@@ -249,11 +273,16 @@ function TrackContent() {
                   </button>
 
                   <button
-                    onClick={() => generateConvocationPdf(student)}
-                    className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    onClick={() => handleDownloadPdf(student)}
+                    disabled={downloadingPdf}
+                    className="px-4 py-2 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-60"
                   >
-                    <Download className="w-4 h-4" />
-                    <span>Download Pass (PDF)</span>
+                    {downloadingPdf ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    <span>{downloadingPdf ? 'Generating PDF...' : 'Download Pass (PDF)'}</span>
                   </button>
 
                   <button
@@ -412,11 +441,16 @@ function TrackContent() {
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Official Entry Card</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => generateConvocationPdf(student)}
-                  className="px-3.5 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  onClick={() => handleDownloadPdf(student)}
+                  disabled={downloadingPdf}
+                  className="px-3.5 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-lg hover:bg-emerald-800 transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
+                  {downloadingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{downloadingPdf ? 'Saving...' : 'Download PDF'}</span>
                 </button>
                 <button
                   onClick={() => window.print()}
@@ -482,7 +516,7 @@ function TrackContent() {
                 </div>
                 <div className="text-center">
                   <div className="w-24 border-b border-slate-300 mb-1"></div>
-                  <span>Controller of Convocation</span>
+                  <span>Account Office</span>
                 </div>
               </div>
             </div>

@@ -1,12 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, UserPlus, Search, Menu, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ShieldCheck, UserPlus, Search, Menu, X, Loader2 } from 'lucide-react';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  useEffect(() => {
+    setAdminLoading(false);
+  }, [pathname]);
+
+  const handleAdminClick = () => {
+    if (!pathname.startsWith('/admin')) {
+      setAdminLoading(true);
+    }
+  };
 
   return (
     <header className="bg-white/20 backdrop-blur-md border-b border-white/30 shadow-xs">
@@ -58,10 +71,15 @@ export default function Navbar() {
 
             <Link 
               href="/admin/login"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#0C7E81] text-white hover:bg-[#096366] transition shadow-xs"
+              onClick={handleAdminClick}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-[#0C7E81] text-white hover:bg-[#096366] transition shadow-xs ${adminLoading ? 'opacity-80 pointer-events-none' : ''}`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Admin Portal</span>
+              {adminLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              <span>{adminLoading ? 'Opening...' : 'Admin Portal'}</span>
             </Link>
           </nav>
 
@@ -69,10 +87,15 @@ export default function Navbar() {
           <div className="flex md:hidden items-center gap-1.5">
             <Link
               href="/admin/login"
-              className="p-2 rounded-lg bg-[#0C7E81] text-white hover:bg-[#096366] transition"
+              onClick={handleAdminClick}
+              className={`p-2 rounded-lg bg-[#0C7E81] text-white hover:bg-[#096366] transition ${adminLoading ? 'opacity-80 pointer-events-none' : ''}`}
               title="Super Admin"
             >
-              <ShieldCheck className="w-4 h-4" />
+              {adminLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
             </Link>
             <button
               type="button"
@@ -107,11 +130,18 @@ export default function Navbar() {
           </Link>
           <Link
             href="/admin/login"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleAdminClick();
+            }}
             className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0C7E81] text-white transition"
           >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Super Admin Portal</span>
+            {adminLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="w-4 h-4" />
+            )}
+            <span>{adminLoading ? 'Opening Portal...' : 'Super Admin Portal'}</span>
           </Link>
         </div>
       )}

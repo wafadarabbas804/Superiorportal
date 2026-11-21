@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { Printer, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Printer, AlertTriangle, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface ChalanProps {
@@ -21,8 +21,11 @@ interface ChalanProps {
 }
 
 export default function ChalanView({ student }: ChalanProps) {
+  const [printing, setPrinting] = useState(false);
   const handlePrint = () => {
+    setPrinting(true);
     window.print();
+    setTimeout(() => setPrinting(false), 1200);
   };
 
   return (
@@ -46,10 +49,15 @@ export default function ChalanView({ student }: ChalanProps) {
           </Link>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold text-white bg-[#0C7E81] rounded-lg hover:bg-[#096366] transition shadow-xs cursor-pointer"
+            disabled={printing}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold text-white bg-[#0C7E81] rounded-lg hover:bg-[#096366] transition shadow-xs cursor-pointer disabled:opacity-60"
           >
-            <Printer className="w-4 h-4" />
-            <span>Print Chalan</span>
+            {printing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Printer className="w-4 h-4" />
+            )}
+            <span>{printing ? 'Preparing Print...' : 'Print Chalan'}</span>
           </button>
         </div>
       </div>
