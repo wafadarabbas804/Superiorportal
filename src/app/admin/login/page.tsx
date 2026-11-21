@@ -33,12 +33,6 @@ export default function AdminLogin() {
       });
 
       if (error) {
-        // Fallback for simple local demo / testing if auth user not created yet
-        if (emailCheck.value === 'admin@superior.edu.pk' && password === 'admin123') {
-          sessionStorage.setItem('superior_admin_logged_in', 'true');
-          router.push('/admin/dashboard');
-          return;
-        }
         throw error;
       }
 
