@@ -24,6 +24,7 @@ const DEPARTMENTS = [
   'Bachelor of Business Administration (BBA)',
   'BS English',
   'BS Mathematics',
+  'BS Physics',
   'Bachelor of Science in Zoology',
 ];
 
