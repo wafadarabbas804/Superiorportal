@@ -2,14 +2,16 @@
 
 import React from 'react';
 import { Registration } from '@/lib/supabase';
-import { Eye, Award, Check, X } from 'lucide-react';
+import { Eye, Award, Check, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface RegistrationsTableProps {
   registrations: Registration[];
   selectedIds: string[];
-  isAllFilteredSelected: boolean;
-  onSelectAllFiltered: () => void;
+  currentPage: number;
+  pageSize?: number;
+  onPageChange: (page: number) => void;
   onToggleRow: (id: string) => void;
+  onToggleSelectPage: (pageItems: Registration[]) => void;
   onViewProof: (student: Registration) => void;
   onGeneratePass: (student: Registration) => void;
   onApproveClick: (student: Registration) => void;
@@ -17,18 +19,62 @@ interface RegistrationsTableProps {
   onWhatsAppClick: (student: Registration) => void;
 }
 
+function getPaginationRange(currentPage: number, totalPages: number): (number | string)[] {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const range: (number | string)[] = [];
+  const delta = 1;
+  const left = Math.max(2, currentPage - delta);
+  const right = Math.min(totalPages - 1, currentPage + delta);
+
+  range.push(1);
+
+  if (left > 2) {
+    range.push('...');
+  }
+
+  for (let i = left; i <= right; i++) {
+    range.push(i);
+  }
+
+  if (right < totalPages - 1) {
+    range.push('...');
+  }
+
+  range.push(totalPages);
+  return range;
+}
+
 export default function RegistrationsTable({
   registrations,
   selectedIds,
-  isAllFilteredSelected,
-  onSelectAllFiltered,
+  currentPage,
+  pageSize = 20,
+  onPageChange,
   onToggleRow,
+  onToggleSelectPage,
   onViewProof,
   onGeneratePass,
   onApproveClick,
   onRejectClick,
   onWhatsAppClick
 }: RegistrationsTableProps) {
+  const totalItems = registrations.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  
+  // Guard current page
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const currentItems = registrations.slice(startIndex, endIndex);
+
+  const isCurrentPageSelected = 
+    currentItems.length > 0 && currentItems.every((item) => selectedIds.includes(item.id));
+
+  const paginationRange = getPaginationRange(safePage, totalPages);
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
@@ -38,10 +84,10 @@ export default function RegistrationsTable({
               <th className="py-3.5 px-3 w-10 text-center">
                 <input
                   type="checkbox"
-                  checked={isAllFilteredSelected}
-                  onChange={onSelectAllFiltered}
+                  checked={isCurrentPageSelected}
+                  onChange={() => onToggleSelectPage(currentItems)}
                   className="w-4 h-4 rounded border-slate-300 text-[#0C7E81] focus:ring-[#0C7E81] cursor-pointer"
-                  title="Select / Deselect all in view"
+                  title="Select / Deselect all 20 students on this page"
                 />
               </th>
               <th className="py-3.5 px-4">Student & Roll No</th>
@@ -54,14 +100,14 @@ export default function RegistrationsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {registrations.length === 0 ? (
+            {currentItems.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-8 text-center text-slate-400">
                   Koi registration record nahi mila.
                 </td>
               </tr>
             ) : (
-              registrations.map((item) => {
+              currentItems.map((item) => {
                 const isRowSelected = selectedIds.includes(item.id);
                 return (
                   <tr
@@ -199,6 +245,97 @@ export default function RegistrationsTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Footer */}
+      {totalItems > 0 && (
+        <div className="border-t border-slate-200 px-4 py-3 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+          <div className="font-medium">
+            Showing <span className="font-bold text-slate-900">{startIndex + 1}</span> to{' '}
+            <span className="font-bold text-slate-900">{endIndex}</span> of{' '}
+            <span className="font-bold text-slate-900">{totalItems}</span> students
+            {totalPages > 1 && (
+              <span className="text-slate-400 ml-1.5">
+                (Page <span className="font-bold text-slate-700">{safePage}</span> of {totalPages})
+              </span>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {/* First Page */}
+              <button
+                type="button"
+                onClick={() => onPageChange(1)}
+                disabled={safePage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700"
+                title="First Page"
+              >
+                <ChevronsLeft className="w-4 h-4" />
+              </button>
+
+              {/* Prev Page */}
+              <button
+                type="button"
+                onClick={() => onPageChange(safePage - 1)}
+                disabled={safePage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Page Number Buttons */}
+              {paginationRange.map((pageItem, idx) => {
+                if (pageItem === '...') {
+                  return (
+                    <span key={`dots-${idx}`} className="px-2 py-1 text-slate-400 select-none">
+                      ...
+                    </span>
+                  );
+                }
+                const pageNum = Number(pageItem);
+                const isActive = pageNum === safePage;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => onPageChange(pageNum)}
+                    className={`min-w-[32px] h-8 px-2 rounded-lg font-bold text-xs transition cursor-pointer ${
+                      isActive
+                        ? 'bg-[#0C7E81] text-white shadow-xs'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              {/* Next Page */}
+              <button
+                type="button"
+                onClick={() => onPageChange(safePage + 1)}
+                disabled={safePage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700"
+                title="Next Page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {/* Last Page */}
+              <button
+                type="button"
+                onClick={() => onPageChange(totalPages)}
+                disabled={safePage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer text-slate-700"
+                title="Last Page"
+              >
+                <ChevronsRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

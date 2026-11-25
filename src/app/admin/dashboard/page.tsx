@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
   const [search, setSearch] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Modal States
   const [selectedStudent, setSelectedStudent] = useState<Registration | null>(null);
@@ -85,6 +86,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchRegistrations();
   }, []);
+
+  // Reset to page 1 whenever search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus, filterDepartment]);
 
   // Action: Approve Student Payment
   const handleApprove = async (id: string) => {
@@ -202,6 +208,18 @@ export default function AdminDashboard() {
     );
   };
 
+  const handleToggleSelectPage = (pageItems: Registration[]) => {
+    const pageItemIds = pageItems.map(p => p.id);
+    const isPageAllSelected = pageItems.length > 0 && pageItems.every(p => selectedIds.includes(p.id));
+
+    if (isPageAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !pageItemIds.includes(id)));
+    } else {
+      const merged = new Set([...selectedIds, ...pageItemIds]);
+      setSelectedIds(Array.from(merged));
+    }
+  };
+
   const selectedStudents = registrations.filter(r => selectedIds.includes(r.id));
   const hasActiveFilters = filterDepartment !== 'all' || filterStatus !== 'all' || !!search;
 
@@ -300,9 +318,11 @@ export default function AdminDashboard() {
       <RegistrationsTable
         registrations={filtered}
         selectedIds={selectedIds}
-        isAllFilteredSelected={isAllFilteredSelected}
-        onSelectAllFiltered={handleSelectAllFiltered}
+        currentPage={currentPage}
+        pageSize={20}
+        onPageChange={setCurrentPage}
         onToggleRow={handleToggleRow}
+        onToggleSelectPage={handleToggleSelectPage}
         onViewProof={(student) => setSelectedStudent(student)}
         onGeneratePass={(student) => setPassStudent(student)}
         onApproveClick={(student) => setStudentToApprove(student)}
